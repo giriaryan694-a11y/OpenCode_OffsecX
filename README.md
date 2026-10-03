@@ -233,7 +233,6 @@ The important part for the quick-start method in this repository is downloading 
   * CTF workflows
 * Always follow applicable laws, rules, and platform terms.
 * Only test systems you own or are explicitly authorized to assess.
-* Do not place API keys, passwords, session tokens, private keys, or other secrets into this repository.
 * Review the configuration before using it in environments containing sensitive information.
 * Model availability, configuration syntax, and OpenCode behavior may change as OpenCode evolves.
 * This project is not affiliated with OpenCode, Anomaly, or the developers/providers of the models mentioned here.

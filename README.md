@@ -147,6 +147,57 @@ Free model availability is not permanent, because apparently even computers have
 
 ---
 
+# ⚙️ Subagent Depth
+
+This configuration uses a multi-agent delegation chain, so `opencode.json` sets the top-level `subagent_depth` option:
+
+```json
+{
+  "$schema": "https://opencode.ai/config.json",
+  "subagent_depth": 10,
+  "agent": { ... }
+}
+```
+
+> **Note:** `subagent_depth` is a **top-level** option. Placing it under `experimental` or any other block will be ignored.
+
+## What it controls
+
+`subagent_depth` controls how deeply agents may invoke other agents via the task tool:
+
+| Value | Meaning |
+| --- | --- |
+| `0` | No subagent launches at all |
+| `1` (OpenCode default) | Primary agents can launch subagents, but subagents **cannot** launch other subagents |
+| `2` | Subagents can launch one additional nested level |
+| `3+` | Deeper nesting, one additional level per increment |
+
+## Why this configuration needs it
+
+The delegation chain in this configuration runs up to **three levels deep**:
+
+```text
+OpenCode_OffsecX  ->  web-pentest-agent  ->  vuln-chainer  ->  research-agent
+   (primary)            (subagent)            (subagent)       (subagent)
+```
+
+At the OpenCode default of `1`, subagents cannot invoke each other. Any prompt instruction like *"code-analyser invokes research-agent"* is silently blocked at the platform level, and the agents will appear to ignore the delegation rules even though the prompts are correct. Setting `subagent_depth` above `1` is what makes the nested delegation actually work.
+
+The value is a **ceiling, not a requirement**. The per-agent `permission.task` rules in `opencode.json` already restrict who may invoke whom, so the deepest possible chain in this configuration is three levels no matter how high the ceiling is.
+
+## Increase or decrease it as you want
+
+You are free to tune `subagent_depth` to your workflow:
+
+* **`3`** — the minimum that supports this configuration's full delegation chain.
+* **`1`** — only the primary agent invokes subagents; specialists can no longer call each other.
+* **`0`** — subagents are disabled entirely.
+* **Higher values** — extra headroom if you extend the configuration with deeper agent chains of your own.
+
+After changing `opencode.json`, restart OpenCode — the configuration is read at startup, not hot-reloaded.
+
+---
+
 # 📁 Repository Structure
 
 ```text
@@ -204,6 +255,16 @@ Its actual capabilities depend on:
 
 ---
 
+## Why do my agents ignore subagent delegation instructions?
+
+Check `subagent_depth` first. The OpenCode default is `1`, which prevents subagents from launching other subagents **regardless of what the prompts say** — so nested delegation instructions are silently blocked, not ignored by the model.
+
+This configuration sets `subagent_depth: 10` so the full chain (primary agent → specialist → chainer → research) works. If you changed the value, make sure it is at least `3` for this configuration, and restart OpenCode after editing `opencode.json` — agent configuration is read at startup, not hot-reloaded.
+
+See the **Subagent Depth** section above for the full explanation.
+
+---
+
 ## Can I use another model?
 
 Yes.
@@ -231,6 +292,7 @@ The important part for the quick-start method in this repository is downloading 
   * Pentest learning
   * Authorized research
   * CTF workflows
+* `subagent_depth` in `opencode.json` controls how deeply subagents may invoke each other; see the **Subagent Depth** section before changing it.
 * Always follow applicable laws, rules, and platform terms.
 * Only test systems you own or are explicitly authorized to assess.
 * Review the configuration before using it in environments containing sensitive information.

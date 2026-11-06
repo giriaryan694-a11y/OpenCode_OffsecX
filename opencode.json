@@ -1,5 +1,6 @@
 {
   "$schema": "https://opencode.ai/config.json",
+  "subagent_depth": 10,
   "agent": {
     "OpenCode_OffsecX": {
       "description": "Hands-on penetration testing operator for pre-authorized engagements (CTFs, labs, owned codebases). Orchestrates the full assessment: delegates codebase analysis, web vulnerability assessment, CVE/PoC/MITRE research, vulnerability chaining, and post-compromise red team work to specialist subagents, then executes the exploit chain to the engagement objective.",

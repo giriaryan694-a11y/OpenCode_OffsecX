@@ -149,17 +149,24 @@ Free model availability is not permanent, because apparently even computers have
 
 # ⚙️ Subagent Depth
 
-This configuration uses a multi-agent delegation chain, so `opencode.json` sets the top-level `subagent_depth` option:
+This configuration uses a multi-agent delegation graph, so `opencode.json` raises the subagent depth limit:
 
 ```json
 {
   "$schema": "https://opencode.ai/config.json",
-  "subagent_depth": 10,
+  "experimental": {
+    "subagent_depth": 10
+  },
   "agent": { ... }
 }
 ```
 
-> **Note:** `subagent_depth` is a **top-level** option. Placing it under `experimental` or any other block will be ignored.
+> **Note — the key's location depends on your OpenCode version:**
+>
+> * **OpenCode v2 (2.x, current npm/installer releases):** use `experimental.subagent_depth`. A top-level `subagent_depth` key is a **V1-only legacy setting that v2 silently drops** (it logs an "omitted unsupported legacy setting" diagnostic), leaving the depth at the default of `1` — nested delegation then fails with `Subagent depth limit reached (1)`.
+> * **OpenCode v1:** use the top-level `subagent_depth` option.
+>
+> Check with `opencode --version`, and run `opencode debug config` to confirm no legacy-setting diagnostics appear.
 
 ## What it controls
 
@@ -257,9 +264,14 @@ Its actual capabilities depend on:
 
 ## Why do my agents ignore subagent delegation instructions?
 
-Check `subagent_depth` first. The OpenCode default is `1`, which prevents subagents from launching other subagents **regardless of what the prompts say** — so nested delegation instructions are silently blocked, not ignored by the model.
+Check the subagent depth first. The OpenCode default is `1`, which prevents subagents from launching other subagents **regardless of what the prompts say** — so nested delegation fails at the platform level (error: `Subagent depth limit reached (1)`), not because the model ignored you. On OpenCode v2 the tool is still advertised at the depth limit, so agents keep *trying* to delegate and failing.
 
-This configuration sets `subagent_depth: 10` so the full delegation graph (primary agent → specialist → specialist → chainer → research) works. If you changed the value, make sure it is at least `4` for this configuration, and restart OpenCode after editing `opencode.json` — agent configuration is read at startup, not hot-reloaded.
+Two things to check:
+
+1. That the depth is actually raised — on v2 that means `experimental.subagent_depth` (a top-level `subagent_depth` is legacy and gets dropped). This configuration sets `experimental.subagent_depth: 10` so the full delegation graph (primary agent → specialist → specialist → chainer → research) works. If you changed the value, keep it at least `4` for this configuration.
+2. That the delegating agent's `permission.task` rules actually allow the target subagent.
+
+Restart OpenCode after editing `opencode.json` — agent configuration is read at startup, not hot-reloaded.
 
 See the **Subagent Depth** section above for the full explanation.
 
